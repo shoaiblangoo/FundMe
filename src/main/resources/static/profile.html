@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            flex-direction: column;
+            position: relative;
+        }
+        #profileDetails {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        label {
+        display: block;
+        margin-bottom: 8px;
+        }
+
+        button {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 10px;
+        }
+
+
+        h1 {
+            color: #4caf50;
+        }
+
+        strong {
+            font-weight: bold;
+        }
+
+        p {
+            margin: 5px 0;
+        }
+        .home-button {
+            background-color: #4caf50;
+            color: white;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            margin: 0;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+<button type="button" class="home-button" onclick="redirectToHome()">Home</button>
+<h1>My Profile</h1>
+
+<div id="profileDetails">
+    <p id="userName"></p>
+    <p id="userEmail"></p>
+    <p id="userContact"></p>
+    <p id="totalAmountFunded"></p><br>
+    <p id="projectsCreated"></p><br>
+    <p id="projectsFunded"></p>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const userId = getQueryParam('userId');
+        const accessToken = localStorage.getItem('accessToken');
+        if (userId) {
+            fetchProfileDetails(userId);
+        } else {
+            console.error('User ID not found');
+            alert('User ID not found. Please log in.');
+        }
+    });
+
+    function fetchProfileDetails(userId) {
+    const accessToken = localStorage.getItem('accessToken');
+        fetch(`http://localhost:8080/user/getUserDetails/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(userData => {
+            displayUserData(userData);
+        })
+        .catch(error => {
+            console.error('Error fetching user details:', error);
+        });
+
+        fetch(`http://localhost:8080/funding/totalFundedAmount/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(totalAmountFunded => {
+            updateProfileDetail('totalAmountFunded', `Total Amount Funded: ${totalAmountFunded}`);
+        })
+        .catch(error => {
+            console.error('Error fetching total amount funded:', error);
+        });
+
+        fetch(`http://localhost:8080/user/getUserProjects/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(projectsCreated => {
+            displayProjectsCreated(projectsCreated);
+        })
+        .catch(error => {
+            console.error('Error fetching projects created:', error);
+        });
+
+        fetch(`http://localhost:8080/user/fundedAmountPerProject/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(projectsFunded => {
+            displayProjectsFunded(projectsFunded);
+        })
+        .catch(error => {
+            console.error('Error fetching projects funded:', error);
+        });
+    }
+
+    function displayUserData(userData) {
+        document.getElementById('userName').innerText = `Name: ${userData.name}`;
+        document.getElementById('userEmail').innerText = `Email: ${userData.email}`;
+        document.getElementById('userContact').innerText = `Contact: ${userData.contactNumber}`;
+    }
+
+    function updateProfileDetail(elementId, content) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.innerText = content;
+        } else {
+            console.error(`Element with ID ${elementId} not found.`);
+        }
+    }
+
+    function displayProjectsCreated(projectsCreated) {
+        const projectsCreatedElement = document.getElementById('projectsCreated');
+        if (projectsCreatedElement) {
+            projectsCreatedElement.innerHTML = '<strong>Projects Created:</strong>';
+            projectsCreated.forEach(project => {
+                const projectInfo = `<p>${project.projectName} - ${project.description}</p>`;
+                projectsCreatedElement.innerHTML += projectInfo;
+            });
+        } else {
+            console.error('Element with ID projectsCreated not found.');
+        }
+    }
+
+    function displayProjectsFunded(projectsFunded) {
+    const accessToken = localStorage.getItem('accessToken');
+    const projectsFundedElement = document.getElementById('projectsFunded');
+    if (projectsFundedElement) {
+        projectsFundedElement.innerHTML = '<strong>Projects Funded:</strong>';
+        Object.entries(projectsFunded).forEach(([projectId, fundedAmount]) => {
+            fetch(`http://localhost:8080/user/getProjectDetails/${projectId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(projectDetails => {
+                if (projectDetails) {
+                    const projectInfo = `<p>Name: ${projectDetails.projectName}, Amount: ${fundedAmount}</p>`;
+                    projectsFundedElement.innerHTML += projectInfo;
+                } else {
+                    console.error(`Project details not found for Project ID: ${projectId}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching project details:', error);
+            });
+        });
+    } else {
+        console.error('Element with ID projectsFunded not found.');
+    }
+}
+
+
+    function getQueryParam(param) {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        return urlParams.get(param);
+    }
+
+    function redirectToHome() {
+        window.location.href = 'home.html';
+    }
+</script>
+</body>
+</html>

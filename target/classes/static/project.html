@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Details</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #projectDetails {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            text-align: left;
+            margin-bottom: 20px;
+        }
+
+        #description {
+            font-weight: bold;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .home-button {
+            background-color: #4caf50;
+            color: white;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+<button type="button" class="home-button" onclick="redirectToHome()">Home</button>
+<h1>Project Details</h1>
+
+<div id="projectDetails">
+    <h2 id="projectName"></h2>
+    <p id="description"></p>
+    <p id="businessPlan"></p>
+    <p id="userName"></p>
+    <p id="totalFundingAmount"></p>
+    <p id="fundingReceived"></p>
+</div>
+
+<button id="fundButton" onclick="redirectToFundPage()">Fund this project</button>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const projectId = getProjectIdFromUrl();
+        const accessToken = localStorage.getItem('accessToken');
+        if (projectId) {
+            fetch(`http://localhost:8080/user/getProjectDetails/${projectId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(projectDetails => {
+                if (projectDetails) {
+                    updateProjectDetails(projectDetails);
+                } else {
+                    console.error('Project details not found.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        } else {
+            console.error('Project ID not found');
+        }
+    });
+
+    function getProjectIdFromUrl() {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        return urlParams.get('projectId');
+    }
+
+    function updateProjectDetails(details) {
+        if (details) {
+            document.getElementById('projectName').innerText = details.projectName;
+            document.getElementById('userName').innerText = `Created by: ${details.user.name}`;
+            document.getElementById('description').innerText = `Description: ${details.description}`;
+            document.getElementById('businessPlan').innerText = `Business Plan: ${details.businessPlan}`;
+            document.getElementById('totalFundingAmount').innerText = `Goal: ${details.totalFundingAmount}`;
+            document.getElementById('fundingReceived').innerText = `Funding Received: ${details.fundingReceived}`;
+
+            const fundButton = document.getElementById('fundButton');
+            fundButton.addEventListener('click', function () {
+                redirectToFundPage(details.userId, details.projectId);
+            });
+        }
+        else {
+            console.error('Invalid project details');
+        }
+    }
+
+    function redirectToFundPage() {
+        const userId = getQueryParam('userId');
+        const projectId = getQueryParam('projectId');
+        if (userId && projectId) {
+            window.location.href = `pay.html?userId=${userId}&projectId=${projectId}`;
+        } else {
+            console.error('User ID or Project ID not found');
+        }
+    }
+
+    function getQueryParam(param) {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        return urlParams.get(param);
+    }
+
+    function redirectToHome() {
+        window.location.href = 'home.html';
+    }
+</script>
+
+</body>
+</html>

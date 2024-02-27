@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FundMe - Payment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+            flex-direction: column;
+        }
+
+        .payment-form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        h1 {
+            margin-bottom: 10px;
+            color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Pay Here</h1>
+
+<div class="payment-form">
+    <label for="amount">Amount:</label>
+    <input type="number" id="amount" name="amount" required>
+
+    <button onclick="makePayment()">Pay</button>
+</div>
+
+<script>
+    function makePayment() {
+        const userId = getQueryParam('userId');
+        const projectId = getQueryParam('projectId');
+        const amount = document.getElementById('amount').value;
+        const accessToken = localStorage.getItem('accessToken');
+
+        if (userId && projectId && amount) {
+            const paymentData = {
+                userId: parseInt(userId),
+                projectId: parseInt(projectId),
+                amount: parseFloat(amount)
+            };
+
+            fetch('http://localhost:8080/funding/fundProject', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(paymentData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Payment successful!');
+                window.location.href = 'project.html' + `?userId=${userId}&projectId=${projectId}`;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Payment failed. Please try again.');
+            });
+        } else {
+            console.error('Invalid payment details');
+            alert('Invalid payment details. Please try again.');
+        }
+    }
+
+    function getQueryParam(param) {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        return urlParams.get(param);
+    }
+</script>
+
+</body>
+</html>

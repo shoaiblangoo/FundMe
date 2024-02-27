@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FundMe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            height: 100vh;
+            margin-bottom: 60px;
+
+        }
+
+        .card {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            margin-left: 120px;
+            margin-right: 120px;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        label {
+        display: block;
+        margin-bottom: 8px;
+        }
+
+        button {
+        background-color: #4caf50;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 7px;
+        cursor: pointer;
+        margin-right: 10px;
+        }
+
+
+        .heading_prop {
+            color: #4caf50;
+            padding-top: 10px;
+            margin-left: 15px;
+            font-size: 38px;
+        }
+
+        #userData {
+            background-color: #f4f4f4;
+            color: #4caf50;
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        #userData p {
+            margin: 5px 0;
+        }
+
+        .proj_btn{
+            margin-top: 18px;
+            margin-left: auto;
+        }
+
+        .main_btn{
+            width: auto;
+            height: 45px;
+        }
+
+        .project-name {
+            font-weight: bold;
+        }
+        .welcome_stm{
+            text-align: center;
+            font-size: 60px;
+            font-weight: bold;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif
+        }
+    </style>
+</head>
+<body>
+
+<div class="d-flex flex-row">
+    <span class="heading_prop"><a style="font-weight: bold;">Fund</a>Me</span>
+    <div class="proj_btn d-flex flex-row justify-content-end">
+        <button onclick="redirectToCreateProject()" class="main_btn">Create Project</button>
+        <button onclick="redirectToProfile()" class="main_btn"> My Profile</button>
+        <button onclick="logout()" class="main_btn">Logout</button>
+    </div>
+</div>
+<div  id="userData">
+    <p class="welcome_stm" id="userName"></p>
+    <p id="userEmail"></p>
+</div>
+<div id="projectList"></div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    const accessToken = localStorage.getItem('accessToken');
+    const userId = localStorage.getItem('userId');
+
+
+
+    if (accessToken && userId) {
+        fetch(`http://localhost:8080/user/getUserDetails/${userId}`, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(userData => {
+            //console.log('Access Token:', accessToken);
+            displayUserData(userData);
+            fetchProjects(accessToken);
+        })
+
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    } else {
+        window.location.href = 'login.html';
+    }
+});
+
+function redirectToCreateProject() {
+    const userId = localStorage.getItem('userId');
+    if (userId) {
+        window.location.href = `createproject.html?userId=${userId}`;
+    } else {
+        console.error('User ID not found');
+        alert('User ID not found. Please log in.');
+    }
+}
+
+function logout() {
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('userId');
+        window.location.href = 'login.html';
+    }
+
+function displayUserData(userData) {
+    document.getElementById('userName').innerText = `Welcome, ${userData.name}!`;
+    //document.getElementById('userEmail').innerText = `Email: ${userData.email}`;
+}
+
+function fetchProjects(accessToken) {
+        fetch('http://localhost:8080/user/getAllProjects', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(projects => {
+            displayProjects(projects);
+        })
+        .catch(error => {
+            console.error('Error fetching projects:', error);
+        });
+    }
+
+    function displayProjects(projects) {
+        const projectListContainer = document.getElementById('projectList');
+        projectListContainer.innerHTML = '';
+
+        projects.forEach(project => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            const projectNameElement = document.createElement('span');
+            projectNameElement.className = 'project-name';
+            projectNameElement.innerText = project.projectName;
+            const projectNameAndDescription = `${projectNameElement.outerHTML} ${project.description}`;
+            card.innerHTML = projectNameAndDescription;
+            card.addEventListener('click', function () {
+                redirectToProjectPage(project.projectId);
+            });
+
+            projectListContainer.appendChild(card);
+        });
+
+
+    }
+
+    function redirectToProjectPage(projectId) {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            window.location.href = `project.html?userId=${userId}&projectId=${projectId}`;
+        } else {
+            console.error('User ID not found');
+            alert('User ID not found. Please log in.');
+        }
+    }
+
+    function redirectToProfile() {
+        const userId = localStorage.getItem('userId');
+        if (userId) {
+            window.location.href = `profile.html?userId=${userId}`;
+        } else {
+            console.error('User ID not found');
+            alert('User ID not found. Please log in.');
+        }
+    }
+</script>
+
+
+</body>
+</html>
